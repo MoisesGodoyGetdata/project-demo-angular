@@ -1,26 +1,31 @@
-name: Azure Static Web Apps CI/CD
+name: Deploy Angular 19 to Azure Static Web Apps
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    types: [opened, synchronize, reopened, closed]
-    branches:
-      - main
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+  build_and_deploy:
     runs-on: ubuntu-latest
-    name: Build and Deploy Job
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
-          submodules: true
-          lfs: false
-      - name: Build And Deploy
-        id: builddeploy
+          node-version: '20'   # Angular 19 va bien con Node 20 LTS
+
+      - run: npm ci
+      - run: npm run build -- --configuration=production
+
+      # Diagnóstico: asegúrate de que EXISTE el index.html
+      - name: Mostrar dist
+        run: |
+          ls -la dist || true
+          ls -la dist/prueba-angular-19 || true
+          ls -la dist/prueba-angular-19/browser || true
+
+      # Publica lo YA compilado (sin que Oryx vuelva a construir)
       - uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
